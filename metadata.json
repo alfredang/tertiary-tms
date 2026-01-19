@@ -1,0 +1,5 @@
+{
+  "name": "Tertiary LMS",
+  "description": "A full-fledged, modern AI-powered Learning Management System (LMS) web app. It features distinct trainee and trainer views, courseware management, gamification, an AI chatbot for learning support, and AI-powered tools for quiz and assessment generation.",
+  "requestFramePermissions": []
+}
