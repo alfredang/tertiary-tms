@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { paymentService } from '../services/payment.service.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
-import { stripeConfig, stripe } from '../config/index.js';
+import { paymentService } from '../services/payment.service';
+import { AuthRequest } from '../middleware/auth.middleware';
+import { stripeConfig, stripe } from '../config/index';
 
 const calculateFeesSchema = z.object({
   enrollmentId: z.string().uuid(),

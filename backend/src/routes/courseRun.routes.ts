@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { courseRunController } from '../controllers/courseRun.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import { requireRole } from '../middleware/rbac.middleware.js';
+import { courseRunController } from '../controllers/courseRun.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { requireRole } from '../middleware/rbac.middleware';
 import { UserRole } from '@prisma/client';
 
 const router = Router();

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { enrollmentController } from '../controllers/enrollment.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import { requireRole } from '../middleware/rbac.middleware.js';
+import { enrollmentController } from '../controllers/enrollment.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { requireRole } from '../middleware/rbac.middleware';
 import { UserRole } from '@prisma/client';
 
 const router = Router();

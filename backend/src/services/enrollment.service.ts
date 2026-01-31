@@ -1,6 +1,6 @@
 import { EnrollmentStatus, PaymentStatus, ClaimStatus, Prisma } from '@prisma/client';
-import { prisma } from '../config/index.js';
-import { AppError } from '../middleware/error.middleware.js';
+import { prisma } from '../config/index';
+import { AppError } from '../middleware/error.middleware';
 
 interface EnrollmentFilters {
   courseRunId?: string;

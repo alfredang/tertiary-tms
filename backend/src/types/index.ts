@@ -83,7 +83,7 @@ export interface FeeCalculationResult {
 
 export interface CreatePaymentIntentRequest {
   enrollmentId: string;
-  amount: number;
+  amount?: number;
   currency?: string;
   description?: string;
 }

@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { EnrollmentStatus, PaymentStatus, GradeStatus } from '@prisma/client';
-import { enrollmentService } from '../services/enrollment.service.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
+import { enrollmentService } from '../services/enrollment.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 const createEnrollmentSchema = z.object({
   courseRunId: z.string().uuid(),

@@ -1,7 +1,7 @@
 import { Router, raw } from 'express';
-import { paymentController } from '../controllers/payment.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import { requireRole } from '../middleware/rbac.middleware.js';
+import { paymentController } from '../controllers/payment.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { requireRole } from '../middleware/rbac.middleware';
 import { UserRole } from '@prisma/client';
 
 const router = Router();

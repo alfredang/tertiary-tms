@@ -1,8 +1,9 @@
 import { PaymentStatus } from '@prisma/client';
-import { prisma, stripe } from '../config/index.js';
-import { AppError } from '../middleware/error.middleware.js';
-import { calculateFees } from '../utils/feeCalculator.js';
-import { FeeCalculationResult, CreatePaymentIntentRequest, PaymentIntentResponse } from '../types/index.js';
+import Stripe from 'stripe';
+import { prisma, stripe } from '../config/index';
+import { AppError } from '../middleware/error.middleware';
+import { calculateFees } from '../utils/feeCalculator';
+import { FeeCalculationResult, CreatePaymentIntentRequest, PaymentIntentResponse } from '../types/index';
 
 export const paymentService = {
   async calculateEnrollmentFees(
@@ -147,25 +148,20 @@ export const paymentService = {
       },
     });
 
+    if (!paymentIntent.client_secret) {
+      throw new AppError('Failed to create payment intent', 500);
+    }
+
     return {
-      clientSecret: paymentIntent.client_secret!,
+      clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
       amount,
       currency: data.currency || 'SGD',
     };
   },
 
-  async handleWebhook(event: {
-    type: string;
-    data: {
-      object: {
-        id: string;
-        status: string;
-        metadata?: { enrollmentId?: string };
-      };
-    };
-  }) {
-    const paymentIntent = event.data.object;
+  async handleWebhook(event: Stripe.Event) {
+    const paymentIntent = event.data.object as { id: string };
 
     switch (event.type) {
       case 'payment_intent.succeeded':
@@ -313,7 +309,7 @@ export const paymentService = {
         paymentId: payment.id,
         transactionType: 'refund',
         amount: refundAmount,
-        status: refund.status,
+        status: refund.status || 'pending',
         stripeEventId: refund.id,
       },
     });

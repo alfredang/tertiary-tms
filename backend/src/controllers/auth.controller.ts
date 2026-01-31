@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { UserRole } from '@prisma/client';
-import { authService } from '../services/auth.service.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
+import { authService } from '../services/auth.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 const registerSchema = z.object({
   email: z.string().email(),

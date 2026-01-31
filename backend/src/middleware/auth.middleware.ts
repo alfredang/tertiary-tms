@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { jwtConfig } from '../config/index.js';
-import { JwtPayload } from '../types/index.js';
+import { jwtConfig } from '../config/index';
+import { JwtPayload } from '../types/index';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
-import { AuthRequest } from './auth.middleware.js';
+import { AuthRequest } from './auth.middleware';
 
 type RolePermissions = {
   [key in UserRole]: string[];

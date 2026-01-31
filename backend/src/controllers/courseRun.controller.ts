@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { ClassStatus } from '@prisma/client';
-import { courseRunService } from '../services/courseRun.service.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
+import { courseRunService } from '../services/courseRun.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 const createCourseRunSchema = z.object({
   courseId: z.string().uuid(),

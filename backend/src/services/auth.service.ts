@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
-import { prisma, jwtConfig } from '../config/index.js';
-import { JwtPayload, TokenResponse, RegisterRequest } from '../types/index.js';
-import { AppError } from '../middleware/error.middleware.js';
+import { prisma, jwtConfig } from '../config/index';
+import { JwtPayload, TokenResponse, RegisterRequest } from '../types/index';
+import { AppError } from '../middleware/error.middleware';
 
 const SALT_ROUNDS = 12;
 
@@ -127,13 +127,15 @@ export const authService = {
       trainingProviderId: user.trainingProviderId || undefined,
     };
 
-    const accessToken = jwt.sign(payload, jwtConfig.accessSecret, {
-      expiresIn: jwtConfig.accessExpiry,
-    });
+    const accessOptions: SignOptions = {
+      expiresIn: jwtConfig.accessExpiry as SignOptions['expiresIn'],
+    };
+    const accessToken = jwt.sign(payload, jwtConfig.accessSecret, accessOptions);
 
-    const refreshToken = jwt.sign(payload, jwtConfig.refreshSecret, {
-      expiresIn: jwtConfig.refreshExpiry,
-    });
+    const refreshOptions: SignOptions = {
+      expiresIn: jwtConfig.refreshExpiry as SignOptions['expiresIn'],
+    };
+    const refreshToken = jwt.sign(payload, jwtConfig.refreshSecret, refreshOptions);
 
     // Store refresh token
     const expiresAt = new Date();

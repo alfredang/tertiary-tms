@@ -28,8 +28,8 @@ export const config = {
   },
 };
 
-export { jwtConfig } from './jwt.js';
-export { stripe, stripeConfig } from './stripe.js';
-export { prisma } from './database.js';
+export { jwtConfig } from './jwt';
+export { stripe, stripeConfig } from './stripe';
+export { prisma } from './database';
 
 export default config;

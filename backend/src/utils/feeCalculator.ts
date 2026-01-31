@@ -1,4 +1,4 @@
-import { FeeCalculationResult } from '../types/index.js';
+import { FeeCalculationResult } from '../types/index';
 
 interface LearnerInfo {
   dob?: Date | null;

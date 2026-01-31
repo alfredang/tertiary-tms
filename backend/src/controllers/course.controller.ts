@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { CourseStatus, CourseType } from '@prisma/client';
-import { courseService } from '../services/course.service.js';
-import { AuthRequest } from '../middleware/auth.middleware.js';
+import { courseService } from '../services/course.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 const createCourseSchema = z.object({
   title: z.string().min(1),
@@ -89,7 +89,9 @@ export const courseController = {
 
       const course = await courseService.create({
         ...data,
-        trainingProviderId: req.user?.trainingProviderId,
+        trainingProvider: req.user?.trainingProviderId
+          ? { connect: { id: req.user.trainingProviderId } }
+          : undefined,
       });
 
       res.status(201).json({

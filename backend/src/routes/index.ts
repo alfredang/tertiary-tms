@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes.js';
-import courseRoutes from './course.routes.js';
-import courseRunRoutes from './courseRun.routes.js';
-import enrollmentRoutes from './enrollment.routes.js';
-import paymentRoutes from './payment.routes.js';
+import authRoutes from './auth.routes';
+import courseRoutes from './course.routes';
+import courseRunRoutes from './courseRun.routes';
+import enrollmentRoutes from './enrollment.routes';
+import paymentRoutes from './payment.routes';
 
 const router = Router();
 
