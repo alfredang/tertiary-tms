@@ -1,0 +1,576 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  Learner
+  Trainer
+  Admin
+  Developer
+  TrainingProvider
+}
+
+enum TrainerType {
+  ACLP
+  NonACLP
+  DACE
+}
+
+enum TrainerStatus {
+  Active
+  Inactive
+}
+
+enum CourseType {
+  WSQ
+  IBF
+  NonWSQ
+}
+
+enum CourseStatus {
+  Draft
+  Published
+}
+
+enum ClassStatus {
+  Confirmed
+  Pending
+  Cancelled
+  Reschedule
+}
+
+enum PaymentStatus {
+  Paid
+  Unpaid
+  Pending
+  Overdue
+  Failed
+  Processing
+}
+
+enum EnrollmentStatus {
+  Enrolled
+  NotEnrolled
+  Withdrawn
+  Completed
+}
+
+enum AssessmentCategory {
+  WrittenExam
+  OnlineExam
+  Project
+  Assignments
+  OralInterview
+  Demonstration
+  PracticalExam
+  RolePlay
+  OralQuestioning
+}
+
+enum GradeStatus {
+  Competent
+  NotYetCompetent
+  Pending
+}
+
+enum FundingType {
+  SkillsFuture
+  PSEA
+  MCES
+  UTAP
+  IBF
+  SSGGrant
+}
+
+enum ClaimStatus {
+  Pending
+  Processing
+  Success
+  Failed
+  NA
+}
+
+enum SponsorshipType {
+  SelfSponsored
+  EmployerSponsored
+}
+
+enum EmploymentStatus {
+  Employed
+  Unemployed
+  LookingForJob
+}
+
+// ==================== MODELS ====================
+
+model TrainingProvider {
+  id                   String   @id @default(uuid())
+  companyName          String   @map("company_name")
+  companyShortname     String   @map("company_shortname")
+  uen                  String   @unique
+  companyAddress       String?  @map("company_address")
+  companyLogo          String?  @map("company_logo")
+  contactPersonName    String?  @map("contact_person_name")
+  contactPersonEmail   String?  @map("contact_person_email")
+  contactPersonTel     String?  @map("contact_person_tel")
+
+  // SSG Integration
+  ssgCertFile          String?  @map("ssg_cert_file")
+  ssgPrivateKeyFile    String?  @map("ssg_private_key_file")
+  ssgEncryptionKey     String?  @map("ssg_encryption_key")
+
+  // Settings (stored as JSON)
+  fundingSettings      Json?    @default("{}") @map("funding_settings")
+  adminSettings        Json?    @default("{}") @map("admin_settings")
+  securitySettings     Json?    @default("{}") @map("security_settings")
+  colorScheme          Json?    @default("{}") @map("color_scheme")
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users                User[]
+  courses              Course[]
+  courseRuns           CourseRun[]
+  payments             Payment[]
+  fundingClaims        FundingClaim[]
+  files                File[]
+  calendarEvents       CalendarEvent[]
+
+  @@map("training_providers")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  trainingProviderId  String?   @map("training_provider_id")
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  role                UserRole
+  profilePictureUrl   String?   @map("profile_picture_url")
+  isActive            Boolean   @default(true) @map("is_active")
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  lastLogin           DateTime? @map("last_login")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  trainingProvider    TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  learnerProfile      LearnerProfile?
+  trainerProfile      TrainerProfile?
+  refreshTokens       RefreshToken[]
+  uploadedFiles       File[]
+  gradedAssessments   AssessmentGrade[] @relation("GradedBy")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  token       String   @unique
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model LearnerProfile {
+  id                  String            @id @default(uuid())
+  userId              String            @unique @map("user_id")
+  trainingProviderId  String?           @map("training_provider_id")
+  name                String
+  nric                String?
+  tel                 String?
+  gender              String?
+  dob                 DateTime?
+  ethnicity           String?
+  nationality         String?
+  employmentStatus    EmploymentStatus? @map("employment_status")
+  company             String?
+  courseSponsorship   SponsorshipType?  @map("course_sponsorship")
+
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments         Enrollment[]
+
+  @@map("learner_profiles")
+}
+
+model TrainerProfile {
+  id                  String        @id @default(uuid())
+  userId              String        @unique @map("user_id")
+  trainingProviderId  String?       @map("training_provider_id")
+  name                String
+  tel                 String?
+  gender              String?
+  trainerType         TrainerType?  @map("trainer_type")
+  status              TrainerStatus @default(Active)
+  areasOfExpertise    String[]      @map("areas_of_expertise")
+  qualifications      String[]
+  education           String[]
+  workExperience      Json?         @default("[]") @map("work_experience")
+  linkedinUrl         String?       @map("linkedin_url")
+  cvUrl               String?       @map("cv_url")
+  certifications      Json?         @default("[]")
+
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseRuns          CourseRun[]
+
+  @@map("trainer_profiles")
+}
+
+model Course {
+  id                    String         @id @default(uuid())
+  trainingProviderId    String?        @map("training_provider_id")
+  title                 String
+  courseCode            String         @map("course_code")
+  tscTitle              String?        @map("tsc_title")
+  tscCode               String?        @map("tsc_code")
+  tscKnowledge          String?        @map("tsc_knowledge")
+  tscAbilities          String?        @map("tsc_abilities")
+  learningOutcomes      String?        @map("learning_outcomes")
+  trainingHours         Int?           @map("training_hours")
+  assessmentHours       Int?           @map("assessment_hours")
+  difficulty            String?
+  modeOfLearning        String[]       @map("mode_of_learning")
+  courseType            CourseType     @default(NonWSQ) @map("course_type")
+  courseFee             Decimal        @default(0) @map("course_fee") @db.Decimal(10, 2)
+  taxPercent            Decimal        @default(9) @map("tax_percent") @db.Decimal(5, 2)
+  status                CourseStatus   @default(Draft)
+
+  // Funding eligibility
+  isWsqFunded           Boolean        @default(false) @map("is_wsq_funded")
+  isSkillsFutureEligible Boolean       @default(false) @map("is_skillsfuture_eligible")
+  isPseaEligible        Boolean        @default(false) @map("is_psea_eligible")
+  isMcesEligible        Boolean        @default(false) @map("is_mces_eligible")
+  isIbfFunded           Boolean        @default(false) @map("is_ibf_funded")
+  isUtapEligible        Boolean        @default(false) @map("is_utap_eligible")
+
+  // Content URLs
+  imageUrl              String?        @map("image_url")
+  learnerGuideUrl       String?        @map("learner_guide_url")
+  slidesUrl             String?        @map("slides_url")
+  lessonPlanUrl         String?        @map("lesson_plan_url")
+  assessmentPlanUrl     String?        @map("assessment_plan_url")
+  facilitatorGuideUrl   String?        @map("facilitator_guide_url")
+  trainerSlidesUrl      String?        @map("trainer_slides_url")
+
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  trainingProvider      TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  topics                Topic[]
+  assessments           Assessment[]
+  courseRuns            CourseRun[]
+
+  @@map("courses")
+}
+
+model Topic {
+  id          String    @id @default(uuid())
+  courseId    String    @map("course_id")
+  title       String
+  sortOrder   Int       @default(0) @map("sort_order")
+
+  // Relations
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  subtopics   Subtopic[]
+
+  @@map("topics")
+}
+
+model Subtopic {
+  id          String   @id @default(uuid())
+  topicId     String   @map("topic_id")
+  title       String
+  content     String?
+  imageUrl    String?  @map("image_url")
+  videoUrl    String?  @map("video_url")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  // Relations
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("subtopics")
+}
+
+model Assessment {
+  id          String             @id @default(uuid())
+  courseId    String             @map("course_id")
+  title       String
+  category    AssessmentCategory
+  status      CourseStatus       @default(Draft)
+  accessCode  String?            @map("access_code")
+  questions   String?
+  fileUrl     String?            @map("file_url")
+
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  course      Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  grades      AssessmentGrade[]
+  submissions AssessmentSubmission[]
+
+  @@map("assessments")
+}
+
+model CourseRun {
+  id                    String         @id @default(uuid())
+  courseId              String         @map("course_id")
+  trainingProviderId    String?        @map("training_provider_id")
+  trainerId             String?        @map("trainer_id")
+  courseRunId           String         @map("course_run_id")
+  daId                  String?        @map("da_id")
+  startDate             DateTime       @map("start_date")
+  endDate               DateTime       @map("end_date")
+  classStatus           ClassStatus    @default(Pending) @map("class_status")
+  paymentStatus         PaymentStatus  @default(Pending) @map("payment_status")
+  isLeaderboardEnabled  Boolean        @default(false) @map("is_leaderboard_enabled")
+  certificateUrl        String?        @map("certificate_url")
+
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  course                Course         @relation(fields: [courseId], references: [id])
+  trainingProvider      TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  trainer               TrainerProfile? @relation(fields: [trainerId], references: [id])
+  enrollments           Enrollment[]
+  calendarEvents        CalendarEvent[]
+
+  @@map("course_runs")
+}
+
+model Enrollment {
+  id                  String           @id @default(uuid())
+  courseRunId         String           @map("course_run_id")
+  learnerId           String           @map("learner_id")
+  enrollmentDate      DateTime         @default(now()) @map("enrollment_date")
+  enrollmentStatus    EnrollmentStatus @default(Enrolled) @map("enrollment_status")
+  progressPercent     Int              @default(0) @map("progress_percent")
+  quizScore           Int?             @map("quiz_score")
+
+  // Payment
+  paymentStatus       PaymentStatus    @default(Pending) @map("payment_status")
+  paymentMode         String?          @map("payment_mode")
+  sponsorshipType     SponsorshipType? @map("sponsorship_type")
+
+  // Funding
+  grantId             String?          @map("grant_id")
+  grantStatus         ClaimStatus      @default(NA) @map("grant_status")
+  claimId             String?          @map("claim_id")
+  claimStatus         ClaimStatus      @default(NA) @map("claim_status")
+
+  // Progress tracking (stored as JSON arrays of IDs)
+  completedSubtopics  String[]         @map("completed_subtopics")
+  bookmarkedSubtopics String[]         @map("bookmarked_subtopics")
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  courseRun           CourseRun        @relation(fields: [courseRunId], references: [id], onDelete: Cascade)
+  learner             LearnerProfile   @relation(fields: [learnerId], references: [id])
+  enrollmentFee       EnrollmentFee?
+  employer            EnrollmentEmployer?
+  assessmentGrades    AssessmentGrade[]
+  submissions         AssessmentSubmission[]
+  payments            Payment[]
+  fundingClaims       FundingClaim[]
+
+  @@unique([courseRunId, learnerId])
+  @@map("enrollments")
+}
+
+model EnrollmentFee {
+  id                    String     @id @default(uuid())
+  enrollmentId          String     @unique @map("enrollment_id")
+  totalCourseFee        Decimal    @map("total_course_fee") @db.Decimal(10, 2)
+  grantAmount           Decimal    @default(0) @map("grant_amount") @db.Decimal(10, 2)
+  discount              Decimal    @default(0) @db.Decimal(10, 2)
+  skillsFutureCreditClaim Decimal  @default(0) @map("skillsfuture_credit_claim") @db.Decimal(10, 2)
+  pseaClaim             Decimal    @default(0) @map("psea_claim") @db.Decimal(10, 2)
+  mcesClaim             Decimal    @default(0) @map("mces_claim") @db.Decimal(10, 2)
+  utapClaim             Decimal    @default(0) @map("utap_claim") @db.Decimal(10, 2)
+  ibfClaim              Decimal    @default(0) @map("ibf_claim") @db.Decimal(10, 2)
+  gstAmount             Decimal    @default(0) @map("gst_amount") @db.Decimal(10, 2)
+  netPayable            Decimal    @map("net_payable") @db.Decimal(10, 2)
+  cashPayment           Decimal    @default(0) @map("cash_payment") @db.Decimal(10, 2)
+  invoiceNumber         String?    @map("invoice_number")
+  receiptNumber         String?    @map("receipt_number")
+  invoiceUrl            String?    @map("invoice_url")
+  receiptUrl            String?    @map("receipt_url")
+  proFormaInvoiceUrl    String?    @map("pro_forma_invoice_url")
+
+  // Relations
+  enrollment            Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@map("enrollment_fees")
+}
+
+model EnrollmentEmployer {
+  id            String     @id @default(uuid())
+  enrollmentId  String     @unique @map("enrollment_id")
+  uen           String?
+  companyName   String?    @map("company_name")
+  companyType   String?    @map("company_type")
+  contactName   String?    @map("contact_name")
+  contactEmail  String?    @map("contact_email")
+  contactPhone  String?    @map("contact_phone")
+
+  // Relations
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@map("enrollment_employers")
+}
+
+model AssessmentGrade {
+  id            String      @id @default(uuid())
+  enrollmentId  String      @map("enrollment_id")
+  assessmentId  String      @map("assessment_id")
+  status        GradeStatus @default(Pending)
+  gradedAt      DateTime?   @map("graded_at")
+  gradedById    String?     @map("graded_by_id")
+
+  // Relations
+  enrollment    Enrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  assessment    Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  gradedBy      User?       @relation("GradedBy", fields: [gradedById], references: [id])
+
+  @@unique([enrollmentId, assessmentId])
+  @@map("assessment_grades")
+}
+
+model AssessmentSubmission {
+  id            String     @id @default(uuid())
+  enrollmentId  String     @map("enrollment_id")
+  assessmentId  String     @map("assessment_id")
+  fileName      String?    @map("file_name")
+  fileUrl       String?    @map("file_url")
+  submittedAt   DateTime   @default(now()) @map("submitted_at")
+
+  // Relations
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("assessment_submissions")
+}
+
+model Payment {
+  id                    String           @id @default(uuid())
+  enrollmentId          String           @map("enrollment_id")
+  trainingProviderId    String?          @map("training_provider_id")
+  stripePaymentIntentId String?          @map("stripe_payment_intent_id")
+  stripeCustomerId      String?          @map("stripe_customer_id")
+  amount                Decimal          @db.Decimal(10, 2)
+  currency              String           @default("SGD")
+  status                PaymentStatus    @default(Pending)
+  paymentMethod         String?          @map("payment_method")
+  description           String?
+  metadata              Json?            @default("{}")
+
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  enrollment            Enrollment       @relation(fields: [enrollmentId], references: [id])
+  trainingProvider      TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  transactions          PaymentTransaction[]
+
+  @@map("payments")
+}
+
+model PaymentTransaction {
+  id              String   @id @default(uuid())
+  paymentId       String   @map("payment_id")
+  transactionType String   @map("transaction_type")
+  amount          Decimal  @db.Decimal(10, 2)
+  status          String
+  stripeEventId   String?  @map("stripe_event_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  payment         Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_transactions")
+}
+
+model FundingClaim {
+  id                  String           @id @default(uuid())
+  enrollmentId        String           @map("enrollment_id")
+  trainingProviderId  String?          @map("training_provider_id")
+  fundingType         FundingType      @map("funding_type")
+  claimAmount         Decimal          @map("claim_amount") @db.Decimal(10, 2)
+  claimStatus         ClaimStatus      @default(Pending) @map("claim_status")
+  externalClaimId     String?          @map("external_claim_id")
+  submittedAt         DateTime?        @map("submitted_at")
+  approvedAt          DateTime?        @map("approved_at")
+  disbursedAt         DateTime?        @map("disbursed_at")
+  metadata            Json?            @default("{}")
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  enrollment          Enrollment       @relation(fields: [enrollmentId], references: [id])
+  trainingProvider    TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+
+  @@map("funding_claims")
+}
+
+model CalendarEvent {
+  id                  String           @id @default(uuid())
+  trainingProviderId  String?          @map("training_provider_id")
+  courseRunId         String?          @map("course_run_id")
+  title               String
+  eventDate           DateTime         @map("event_date")
+  eventType           String?          @map("event_type")
+  speaker             String?
+  description         String?
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  trainingProvider    TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  courseRun           CourseRun?       @relation(fields: [courseRunId], references: [id])
+
+  @@map("calendar_events")
+}
+
+model File {
+  id                  String           @id @default(uuid())
+  trainingProviderId  String?          @map("training_provider_id")
+  uploadedById        String?          @map("uploaded_by_id")
+  fileName            String           @map("file_name")
+  fileType            String?          @map("file_type")
+  fileSize            Int?             @map("file_size")
+  storagePath         String           @map("storage_path")
+  storageProvider     String           @default("local") @map("storage_provider")
+  isPublic            Boolean          @default(false) @map("is_public")
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  trainingProvider    TrainingProvider? @relation(fields: [trainingProviderId], references: [id])
+  uploadedBy          User?            @relation(fields: [uploadedById], references: [id])
+
+  @@map("files")
+}
